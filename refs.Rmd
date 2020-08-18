@@ -1,0 +1,21 @@
+---
+title: R packages used
+bibliography: pkg-refs.bib
+#csl: null.csl
+---
+
+- base [@base]
+- COVID19 [@COVID19]
+- dplyr [@dplyr]
+- ggplot2 [@ggplot2]
+- grateful [@grateful]
+- purrr [@purrr]
+- readr [@readr]
+- shiny [@shiny]
+- shinycssloaders [@shinycssloaders]
+- shinydashboard [@shinydashboard]
+- shinythemes [@shinythemes]
+- tidyr [@tidyr]
+- TTR [@TTR]
+
+## References

@@ -3,6 +3,8 @@ library(shiny)
 library(shinydashboard)
 library(shinycssloaders)
 library(shinythemes)
+library(dplyr)
+library(readr)
 
 # load functions ----
 source("get_y_axis.R")
@@ -12,6 +14,7 @@ options(scipen=999)
 
 # loading spinner options ----
 options(spinner.color = "#158CBA", spinner.type = 6)
+
 
 # dashboard-ui ----
 dashboardPage(
@@ -54,8 +57,7 @@ dashboardPage(
         tabName = "references",
         fluidRow(
           box(title = "References", solidHeader = T, status = "primary", width = 12,
-              HTML("1. Guidotti, E., Ardia, D., (2020), COVID-19 Data Hub. <i>Journal of Open Source
-  Software, 5</i>(51):2376. <a href='http://doi.org/10.21105/joss.02376' target='_blank'>http://doi.org/10.21105/joss.02376</a>")),
+              read_lines("citations.md") %>% paste0(., collapse = "\n\n") %>% markdown()),
         )
       )
     )
