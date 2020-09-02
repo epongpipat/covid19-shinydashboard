@@ -19,5 +19,5 @@ packages <-
   unique()
 
 cites <- get_citations(packages)
-rmd <- create_rmd(cites)
+rmd <- create_rmd(cites, csl = "apa")
 render_citations(rmd, "md")
