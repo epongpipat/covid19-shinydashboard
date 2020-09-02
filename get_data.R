@@ -1,5 +1,6 @@
 # load libraries ----
 library("dplyr")
+library("gdata")
 
 # region summary ----
 region_summary <- list(
@@ -23,16 +24,6 @@ metrics_of_interest <- c('tests',
                          'vent', 
                          'icu')
 
-print("## counties data ----")
-# counties ----
-df_temp <- read.csv(url("https://storage.covid19datahub.io/data-3.csv")) %>%
-  mutate(date = as.Date(date)) %>%
-  ungroup() %>%
-  filter(administrative_area_level_2 %in% c("California", "Texas"),
-         administrative_area_level_3 %in% c("Dallas", "Los Angeles")) %>%
-  select(date, region = administrative_area_level_3, all_of(metrics_of_interest))
-df_all <- rbind(df_all, df_temp)
-rm(df_temp)
 
 print("## states data ----")
 # states ----
@@ -95,17 +86,29 @@ df_long <- df_daily %>%
  na.omit()
 rm(df_daily)
 
+print("## get counties data ----")
+print('### dallas ----')
+source('get_data_dallas.R')
+df_long <- rbind(df_long, df_dallas)
+rm(df_dallas)
+
+print('### la ----')
+source('get_data_la.R')
+df_long <- rbind(df_long, df_la)
+rm(df_la)
+
 print("## 7-day moving average ----")
 # get 7-day moving average ----
 df_sma7 <- df_long %>%
   arrange(date) %>%
   group_by(region, metric) %>%
+  na.omit() %>%
   mutate(value_sma7 = TTR::SMA(value, 7)) %>%
   tidyr::pivot_longer(., c(value, value_sma7), names_to = 'smooth', values_to = 'value') %>%
   mutate(smooth = ifelse(smooth == 'value_sma7', T, F)) %>%
   ungroup() %>%
   na.omit()
-rm(df_long)
+#rm(df_days_since_first_confirmed)
 
 # get respective percent of population ----
 print("## percent population ----")
@@ -114,7 +117,7 @@ df_perc_pop <- df_sma7 %>%
   group_by(region, metric) %>%
   mutate(perc_pop = NA)
 for (i in 1:nrow(df_perc_pop)) {
-  region_idx <- which(df_perc_pop$region[i]==names(region_summary))
+  region_idx <- which(stringr::str_detect(df_perc_pop$region[i], names(region_summary)))
   df_perc_pop$perc_pop[i] <- df_perc_pop$value[i]/as.numeric(region_summary[[region_idx]]$population)
 }
 
@@ -123,7 +126,7 @@ print("## percent of respective world metric ----")
 df_world_temp <- df_sma7 %>%
   arrange(date) %>%
   filter(region == "World") %>%
-  select(date, metric, smooth, smooth, world_value = value)
+  select(date, metric, smooth, world_value = value)
 df_world <- full_join(df_sma7, df_world_temp, by = c("date", "metric", "smooth")) %>%
   mutate(perc_world_metric = ifelse(world_value > 0, value / world_value, 0)) %>%
   select(-world_value)
@@ -136,23 +139,27 @@ df_per_thousand <- df_sma7 %>%
   group_by(region, metric) %>%
   mutate(per_thousand = value / 10^3)
 
+print("## perc tests ----")
+# get per tests ----
 df_per_tests_temp <- df_sma7 %>%
   filter(metric == "tests") %>%
   select(-metric) %>%
   rename(value_tests = value)
 df_per_tests <- full_join(df_sma7, df_per_tests_temp, by = c("date", "region", "smooth")) %>%
-  mutate(perc_tests = ifelse(value_tests > 0, value / value_tests, 0))
+  mutate(perc_tests = ifelse(value_tests > 0, value / value_tests, 0)) %>%
+  select(-value_tests)
 rm(df_per_tests_temp)
 
 print("## combine ----")
-df <- full_join(df_sma7, df_perc_pop, by = c("date", "region", "metric", "smooth", "value")) %>%
-  full_join(., df_world, by = c("date", "region", "metric", "smooth", "value")) %>%
-  full_join(., df_per_thousand, by = c("date", "region", "metric", "smooth", "value")) %>%
-  full_join(., df_per_tests, by = c("date", "region", "metric", "smooth", "value")) %>%
+merge_by_vars <- c("date", "region", "metric", "smooth", "value")
+df <- full_join(df_sma7, df_perc_pop, by = merge_by_vars) %>%
+  full_join(., df_world, by = merge_by_vars) %>%
+  full_join(., df_per_thousand, by = merge_by_vars) %>%
+  full_join(., df_per_tests, by = merge_by_vars) %>%
   tidyr::pivot_longer(., c("value", "perc_pop", "perc_world_metric", "per_thousand", "perc_tests"), names_to = "y_axis") %>%
   mutate(y_axis = ifelse(y_axis == "value", "raw", y_axis)) %>%
   na.omit()
-rm(df_sma7, df_perc_pop, df_world, df_per_thousand, df_per_tests)
+rm(df_sma7, df_perc_pop, df_world, df_per_thousand, df_per_tests, df_long)
 
 df_unreliable <- df %>%
   select(region, metric, value) %>%
@@ -164,3 +171,27 @@ df_unreliable <- df %>%
   mutate(reliable = ifelse(n_data == 1, F, T)) %>%
   filter(reliable == F) %>%
   select(region, metric)
+
+df_temp <- df %>%
+  filter(metric == "confirmed", smooth == FALSE, y_axis == "raw") %>%
+  group_by(region) %>%
+  arrange(date) %>%
+  tidyr::nest() %>%
+  mutate(first_day_idx = purrr::map_int(data, ~first(which(.x$value != 0))),
+         data = purrr::map2(data, first_day_idx, function(x, idx) {
+           x <- x %>%
+             mutate(days_since_first_confirmed = 0)
+           n_days <- 0
+           for (i in idx:nrow(x)) {
+             n_days <- n_days + 1
+             x$days_since_first_confirmed[i] <- n_days
+           }
+           x
+         })) %>%
+  select(-first_day_idx) %>%
+  tidyr::unnest() %>%
+  ungroup() %>%
+  select(date, region, days_since_first_confirmed)
+
+df <- inner_join(df, df_temp, by = c("date", "region"))  
+rm(df_temp)
