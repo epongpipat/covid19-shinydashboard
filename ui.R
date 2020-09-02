@@ -7,7 +7,7 @@ library(dplyr)
 library(readr)
 
 # load functions ----
-source("get_y_axis.R")
+source("get_axes.R")
 
 # turn off scientific notation ----
 options(scipen=999)
@@ -27,9 +27,15 @@ dashboardPage(
         menuItem(text = "Options", icon = icon("sliders-h"), startExpanded = T,
                  menuItem("Regions", icon("globe-americas"), startExpanded = T,
                           checkboxGroupInput("regions", NULL, c("World", "USA", "Thailand", "Guatemala", "California", "Texas", "Dallas", "Los Angeles"), c("Los Angeles", "Dallas"))),
-                 menuItem(text = "Data Transformation", icon = icon("cogs"), startExpanded = T, checkboxInput("smooth", "7-Day Moving Average", TRUE)),
-                 menuItem(text = "Figure", icon = icon("chart-line"), startExpanded = T, selectInput("y_axis", "Y-Axis", names(y_axis_list), "% of Respective Region's Population"))
-        ),
+                 br(), menuItem(text = "Data Transformation", icon = icon("cogs"), startExpanded = T, 
+                          #checkboxInput("log", "Log", FALSE),
+                          checkboxInput("smooth", "7-Day Moving Average", TRUE)),
+                 br(), menuItem(text = "Figure", icon = icon("chart-line"), startExpanded = T, 
+                          selectInput("x_axis", "X-Axis", names(x_axis_list), "Date"), 
+                          selectInput("y_axis", "Y-Axis", names(y_axis_list), "% of Respective Region's Population")),
+                 br()
+                 ),
+        menuItem(submitButton(text = HTML("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Apply Changes"), icon = icon("play"), width = "70%")),
         menuItem(text = "Code", icon = icon("code"), href = "https://github.com/epongpipat/covid19-shinydashboard", newtab = T),
         menuItem(text = "References", icon = icon("thumbs-up"), tabName = "references"),
         menuItem(text = "Ekarin Eric Pongpipat, M.A.", icon = icon("id-badge"), href = "https://ekarinpongpipat.com", newtab = T)
