@@ -7,7 +7,7 @@ source("get_data.R")
 
 # load functions ----
 source("create_fig.R")
-source("get_y_axis.R")
+source("get_axes.R")
 
 # dashboard-server ----
 shinyServer(function(input, output) {
@@ -18,15 +18,22 @@ shinyServer(function(input, output) {
     })
     
     
+    x_axis_value <- reactive({
+        get_x_axis_value(input$x_axis)
+    })
+    
     # figures ----
     output$plot_confirmed <- renderPlot({
         viz(
             df,
             regions = as.character(input$regions),
             metrics = "confirmed",
+            #log_value = input$log,
             smooth_value = input$smooth,
             y_axis_value = y_axis_value(),
-            y_lab = input$y_axis
+            y_lab = input$y_axis,
+            x_axis = x_axis_value(),
+            x_lab = input$x_axis
         )
     })
     
@@ -37,7 +44,9 @@ shinyServer(function(input, output) {
             metrics = "hosp",
             smooth_value = input$smooth,
             y_axis_value = y_axis_value(),
-            y_lab = input$y_axis
+            y_lab = input$y_axis,
+            x_axis = x_axis_value(),
+            x_lab = input$x_axis
         )
     })
     
@@ -48,7 +57,9 @@ shinyServer(function(input, output) {
             metrics = "icu",
             smooth_value = input$smooth,
             y_axis_value = y_axis_value(),
-            y_lab = input$y_axis
+            y_lab = input$y_axis,
+            x_axis = x_axis_value(),
+            x_lab = input$x_axis
         )
     })
     
@@ -59,7 +70,9 @@ shinyServer(function(input, output) {
             metrics = "vent",
             smooth_value = input$smooth,
             y_axis_value = y_axis_value(),
-            y_lab = input$y_axis
+            y_lab = input$y_axis,
+            x_axis = x_axis_value(),
+            x_lab = input$x_axis
         )
     })
     
@@ -70,7 +83,9 @@ shinyServer(function(input, output) {
             metrics = "deaths",
             smooth_value = input$smooth,
             y_axis_value = y_axis_value(),
-            y_lab = input$y_axis
+            y_lab = input$y_axis,
+            x_axis = x_axis_value(),
+            x_lab = input$x_axis
         )
     })
     
@@ -81,7 +96,9 @@ shinyServer(function(input, output) {
             metrics = "recovered",
             smooth_value = input$smooth,
             y_axis_value = y_axis_value(),
-            y_lab = input$y_axis
+            y_lab = input$y_axis,
+            x_axis = x_axis_value(),
+            x_lab = input$x_axis
         )
     })
     
@@ -92,7 +109,9 @@ shinyServer(function(input, output) {
             metrics = "tests",
             smooth_value = input$smooth,
             y_axis_value = y_axis_value(),
-            y_lab = input$y_axis
+            y_lab = input$y_axis,
+            x_axis = x_axis_value(),
+            x_lab = input$x_axis
         )
     })
     
