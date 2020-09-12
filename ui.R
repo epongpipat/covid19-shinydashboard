@@ -15,6 +15,7 @@ options(scipen=999)
 # loading spinner options ----
 options(spinner.color = "#158CBA", spinner.type = 6)
 
+tags$head(includeScript("google-analytics.js"))
 
 # dashboard-ui ----
 dashboardPage(
